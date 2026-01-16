@@ -1,0 +1,256 @@
+local function LoadMainScript()
+    -- // Load a FRESH instance of the library for the Main GUI to prevent errors \\ --
+    local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    local HttpService = game:GetService("HttpService")
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+
+    -- // Main Window Setup \\ --
+    local Window = WindUI:CreateWindow({
+        Title = "Auto Artist V5 (Ultimate)",
+        Folder = "AutoArtistV5",
+        IconSize = 24,
+        HideSearchBar = true,
+        Topbar = { Height = 45 }
+    })
+
+    local MainTab = Window:Tab({ Title = "Controls", Icon = "rbxassetid://120306472146156" })
+    local MiscTab = Window:Tab({ Title = "Misc / UI", Icon = "rbxassetid://120306472146156" })
+
+    local AnimSection = MainTab:Section({ Title = "Local Animation" })
+    local NetSection = MainTab:Section({ Title = "Live Broadcasting" })
+    local GuiSection = MiscTab:Section({ Title = "Game Interface" })
+
+    -- */ Variables /* --
+    local AnimationData = {} 
+    local IsPlaying = false
+    local IsLooping = true 
+    local LocalFPS = 12 
+    local CachedGrid = nil 
+    local IsBroadcasting = false
+    local BroadcastDelay = 0.1 
+
+    -- */ Helper: Map Grid /* --
+    local function mapGrid(forceRefresh)
+        if CachedGrid and not forceRefresh then return CachedGrid.Lookup, CachedGrid.Linear end
+        
+        local gui = LocalPlayer.PlayerGui:FindFirstChild("MainGui")
+        if not gui then return nil end
+        
+        local paintFrame = gui:FindFirstChild("PaintFrame")
+        if not paintFrame then return nil end
+        
+        local gridHolder = paintFrame:FindFirstChild("GridHolder")
+        if not gridHolder then return nil end
+
+        local grid = gridHolder:FindFirstChild("Grid")
+        if not grid then return nil end
+        
+        local lookup = {}
+        local linear = {}
+        
+        for _, button in ipairs(grid:GetChildren()) do
+            if button:IsA("GuiButton") then
+                local x = button:GetAttribute("X")
+                local y = button:GetAttribute("Y")
+                if x and y then
+                    if not lookup[x] then lookup[x] = {} end
+                    lookup[x][y] = button
+                end
+                local id = tonumber(button.Name)
+                if id then linear[id] = button end
+            end
+        end
+        CachedGrid = { Lookup = lookup, Linear = linear }
+        return lookup, linear
+    end
+
+    -- */ UI Controls /* --
+    AnimSection:Input({
+        Title = "Paste Animation JSON",
+        Type = "Textarea",
+        Placeholder = "Paste content from python script...",
+        ClearOnFocus = false,
+        Callback = function(text)
+            local success, result = pcall(function() return HttpService:JSONDecode(text) end)
+            if success and type(result) == "table" then 
+                AnimationData = result
+                WindUI:Notify({ Title = "Success", Content = "Loaded " .. #AnimationData .. " frames.", Icon = "check" })
+            else
+                WindUI:Notify({ Title = "Error", Content = "Invalid JSON format.", Icon = "alert-triangle" })
+            end
+        end
+    })
+
+    AnimSection:Slider({
+        Title = "Local FPS",
+        Desc = "Frames Per Second",
+        Step = 1,
+        Value = { Min = 1, Max = 60, Default = 12 },
+        Callback = function(val) LocalFPS = val end
+    })
+
+    AnimSection:Toggle({
+        Title = "Loop Animation",
+        Default = true,
+        Callback = function(val) IsLooping = val end
+    })
+
+    AnimSection:Toggle({
+        Title = "Play Animation (Local)",
+        Callback = function(val)
+            IsPlaying = val
+            if val then
+                if #AnimationData == 0 then
+                    WindUI:Notify({ Title = "Error", Content = "No JSON loaded!", Icon = "alert-triangle" })
+                    IsPlaying = false
+                    return
+                end
+                local xy, _ = mapGrid(true)
+                if not xy then
+                    WindUI:Notify({ Title = "Error", Content = "Sit at the easel first!", Icon = "alert-triangle" })
+                    IsPlaying = false
+                    return
+                end
+                task.spawn(function()
+                    while IsPlaying do
+                        for _, frame in ipairs(AnimationData) do
+                            if not IsPlaying then break end
+                            for _, p in ipairs(frame) do
+                                if xy[p[1]] and xy[p[1]][p[2]] then
+                                    xy[p[1]][p[2]].BackgroundColor3 = Color3.fromRGB(p[3], p[4], p[5])
+                                end
+                            end
+                            task.wait(1 / LocalFPS)
+                        end
+                        if not IsLooping then IsPlaying = false end
+                    end
+                end)
+            end
+        end
+    })
+
+    NetSection:Slider({
+        Title = "Server Update Speed",
+        Desc = "Seconds between packets",
+        Step = 0.05,
+        Value = { Min = 0.0, Max = 1.0, Default = 0.1 },
+        Callback = function(val) BroadcastDelay = val end
+    })
+
+    NetSection:Toggle({
+        Title = "Enable Broadcast (Go Live)",
+        Desc = "Syncs with other players",
+        Callback = function(val)
+            IsBroadcasting = val
+            if val then
+                local Remotes = ReplicatedStorage:FindFirstChild("Remotes")
+                if not Remotes then return end
+                local LiveRemote = Remotes:FindFirstChild("Live")
+                local ToggleRemote = Remotes:FindFirstChild("ToggleLive")
+
+                task.spawn(function()
+                    ToggleRemote:FireServer(true)
+                    WindUI:Notify({ Title = "Live", Content = "Broadcasting started.", Icon = "wifi" })
+                    while IsBroadcasting do
+                        local _, linearMap = mapGrid(false)
+                        if linearMap then
+                            local payload = { Cells = {}, Textures = {} }
+                            for i = 1, 1024 do
+                                local btn = linearMap[i]
+                                if btn then table.insert(payload.Cells, btn.BackgroundColor3:ToHex()) else table.insert(payload.Cells, "FFFFFF") end
+                            end
+                            pcall(function() LiveRemote:FireServer("Update", payload) end)
+                        end
+                        task.wait(BroadcastDelay > 0.01 and BroadcastDelay or 0.01)
+                    end
+                    ToggleRemote:FireServer(false)
+                    WindUI:Notify({ Title = "Live", Content = "Broadcasting ended.", Icon = "wifi-off" })
+                end)
+            end
+        end
+    })
+
+    GuiSection:Toggle({
+        Title = "Disable Main GUI",
+        Desc = "Hides the game UI",
+        Default = false,
+        Callback = function(val)
+            local gui = LocalPlayer.PlayerGui:FindFirstChild("MainGui")
+            if gui then gui.Enabled = not val end
+        end
+    })
+
+    GuiSection:Button({
+        Title = "Emergency Unhide",
+        Callback = function()
+            local gui = LocalPlayer.PlayerGui:FindFirstChild("MainGui")
+            if gui then gui.Enabled = true end
+        end
+    })
+    
+    WindUI:Notify({ Title = "Loaded", Content = "Auto Artist V5 Loaded!", Icon = "check-circle" })
+end
+
+-- // KEY SYSTEM STARTUP \\ --
+local function StartKeySystem()
+    -- Load Key UI Instance
+    local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    local KEY_URL = "https://link-hub.net/164864/youtubelink"
+    local CORRECT_KEY = "ipromisetonotputanynsfw"
+    local InputKey = ""
+
+    local KeyWindow = WindUI:CreateWindow({
+        Title = "Auto Artist - Key System",
+        Icon = "key",
+        Folder = "AutoArtistKey",
+        Size = UDim2.fromOffset(400, 280),
+        Transparent = true,
+        Theme = "Dark",
+        HideSearchBar = true,
+        Topbar = { Height = 45 }
+    })
+
+    local KeyTab = KeyWindow:Tab({ Title = "Verification", Icon = "lock" })
+    local KeySection = KeyTab:Section({ Title = "Access Required" })
+
+    KeySection:Paragraph({ Title = "Instructions", Content = "1. Get Key from link.\n2. Enter key below." })
+    
+    KeySection:Button({
+        Title = "Get Key (Copy Link)",
+        Callback = function()
+            setclipboard(KEY_URL)
+            WindUI:Notify({ Title = "Copied", Content = "Link copied to clipboard.", Icon = "copy" })
+        end
+    })
+
+    KeySection:Input({
+        Title = "Enter Key",
+        Placeholder = "Password...",
+        Callback = function(text) InputKey = text end
+    })
+
+    KeySection:Button({
+        Title = "Check Key",
+        Callback = function()
+            if InputKey == CORRECT_KEY then
+                WindUI:Notify({ Title = "Success", Content = "Key Correct! Loading...", Icon = "unlock" })
+                task.wait(1.5)
+                
+                -- Close the Key Window
+                KeyWindow:Close()
+                
+                -- Important: Wait a moment for cleanup before loading the main script
+                task.wait(0.5)
+                
+                -- Load Main Script
+                LoadMainScript()
+            else
+                WindUI:Notify({ Title = "Denied", Content = "Incorrect Key.", Icon = "x-octagon" })
+            end
+        end
+    })
+end
+
+StartKeySystem()
