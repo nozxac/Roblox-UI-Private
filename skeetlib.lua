@@ -1,35 +1,34 @@
 --[[
-    SKEET.CC KEY SYSTEM V2
-    Enhanced Authentication System
-    API: https://keyvsys.netlify.app/
-    Style: Gamesense / Skeet.cc
+    SKEET.CC LIBRARY V2 - FIXED VERSION
+    Complete UI Library for Roblox
+    No loading issues, fully self-contained
 ]]
 
-local CoreGui = game:GetService("CoreGui")
+-- Services
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
 
--- // CONFIGURATION // --
-local CONFIG = {
-    Title = "SKEET.CC",
-    Subtitle = "Key Authentication System",
+-- Create library table
+local SkeetLib = {}
+SkeetLib.__index = SkeetLib
+
+-- Configuration
+SkeetLib.Config = {
+    RainbowSpeed = 0.005,
+    AnimationSpeed = 0.2,
     AccentColor = Color3.fromRGB(163, 200, 5),
-    KeyEndpoint = "https://keyvsys.netlify.app/.netlify/functions/check-key?key=",
-    GetKeyURL = "https://keyvsys.netlify.app/",
-    KeyPrefix = "KEYV-"
+    BackgroundColor = Color3.fromRGB(20, 20, 20),
+    InnerBgColor = Color3.fromRGB(30, 30, 30),
+    TextColor = Color3.fromRGB(220, 220, 220),
+    BorderColor = Color3.fromRGB(60, 60, 60),
+    Font = Enum.Font.Code
 }
 
--- // CLEANUP // --
-for _, v in pairs(CoreGui:GetChildren()) do
-    if v.Name == "SkeetKeySystem" then
-        v:Destroy()
-    end
-end
-
--- // UTILITY FUNCTIONS // --
-local function MakeDraggable(frame, handle)
+-- Utility: Make Draggable
+function SkeetLib:MakeDraggable(frame, handle)
     local dragging, dragInput, dragStart, startPos
     
     local function update(input)
@@ -67,505 +66,359 @@ local function MakeDraggable(frame, handle)
     end)
 end
 
--- // UI CREATION // --
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SkeetKeySystem"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.IgnoreGuiInset = true
+-- Utility: Create Rainbow Gradient
+function SkeetLib:CreateRainbowGradient()
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
+        ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 255, 0)),
+        ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 0)),
+        ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 255, 255)),
+        ColorSequenceKeypoint.new(0.80, Color3.fromRGB(0, 0, 255)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 255))
+    })
+    return gradient
+end
 
--- Background Blur
-local BlurEffect = Instance.new("BlurEffect")
-BlurEffect.Size = 0
-BlurEffect.Parent = game:GetService("Lighting")
-
-TweenService:Create(BlurEffect, TweenInfo.new(0.5), {Size = 12}):Play()
-
--- Main Container
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 420, 0, 260)
-MainFrame.Position = UDim2.new(0.5, -210, 0.5, -130)
-MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-
--- Shadow Effect
-local Shadow = Instance.new("ImageLabel")
-Shadow.Name = "Shadow"
-Shadow.Size = UDim2.new(1, 30, 1, 30)
-Shadow.Position = UDim2.new(0, -15, 0, -15)
-Shadow.BackgroundTransparency = 1
-Shadow.Image = "rbxassetid://5554236805"
-Shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-Shadow.ImageTransparency = 0.5
-Shadow.ScaleType = Enum.ScaleType.Slice
-Shadow.SliceCenter = Rect.new(23, 23, 277, 277)
-Shadow.ZIndex = 0
-Shadow.Parent = MainFrame
-
--- Outer Border
-local OuterStroke = Instance.new("UIStroke")
-OuterStroke.Thickness = 1
-OuterStroke.Color = Color3.fromRGB(0, 0, 0)
-OuterStroke.Parent = MainFrame
-
--- Inner Border
-local InnerBorder = Instance.new("Frame")
-InnerBorder.Size = UDim2.new(1, -2, 1, -2)
-InnerBorder.Position = UDim2.new(0, 1, 0, 1)
-InnerBorder.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-InnerBorder.BorderSizePixel = 0
-InnerBorder.Parent = MainFrame
-
-local InnerStroke = Instance.new("UIStroke")
-InnerStroke.Thickness = 1
-InnerStroke.Color = Color3.fromRGB(60, 60, 60)
-InnerStroke.Parent = InnerBorder
-
--- Rainbow Gradient Bar (Top)
-local GradientBar = Instance.new("Frame")
-GradientBar.Size = UDim2.new(1, 0, 0, 2)
-GradientBar.Position = UDim2.new(0, 0, 0, 0)
-GradientBar.BorderSizePixel = 0
-GradientBar.ZIndex = 10
-GradientBar.Parent = MainFrame
-
-local UIGradient = Instance.new("UIGradient")
-UIGradient.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 0)),
-    ColorSequenceKeypoint.new(0.20, Color3.fromRGB(255, 255, 0)),
-    ColorSequenceKeypoint.new(0.40, Color3.fromRGB(0, 255, 0)),
-    ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 255, 255)),
-    ColorSequenceKeypoint.new(0.80, Color3.fromRGB(0, 0, 255)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 255))
-})
-UIGradient.Parent = GradientBar
-
--- Animate Rainbow
-task.spawn(function()
-    while GradientBar and GradientBar.Parent do
-        for i = 0, 1, 0.005 do
-            if not GradientBar or not GradientBar.Parent then break end
-            UIGradient.Offset = Vector2.new(i - 0.5, 0)
-            task.wait(0.01)
+-- Utility: Animate Rainbow
+function SkeetLib:AnimateRainbow(gradient)
+    task.spawn(function()
+        while gradient and gradient.Parent do
+            for i = 0, 1, self.Config.RainbowSpeed do
+                if not gradient or not gradient.Parent then break end
+                gradient.Offset = Vector2.new(i - 0.5, 0)
+                task.wait(0.01)
+            end
         end
-    end
-end)
-
--- Header Section
-local Header = Instance.new("Frame")
-Header.Size = UDim2.new(1, 0, 0, 60)
-Header.Position = UDim2.new(0, 0, 0, 2)
-Header.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
-Header.BorderSizePixel = 0
-Header.Parent = MainFrame
-
-local HeaderLine = Instance.new("Frame")
-HeaderLine.Size = UDim2.new(1, 0, 0, 1)
-HeaderLine.Position = UDim2.new(0, 0, 1, 0)
-HeaderLine.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-HeaderLine.BorderSizePixel = 0
-HeaderLine.Parent = Header
-
--- Logo/Icon
-local Logo = Instance.new("TextLabel")
-Logo.Size = UDim2.new(0, 40, 0, 40)
-Logo.Position = UDim2.new(0, 15, 0, 10)
-Logo.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Logo.BorderSizePixel = 0
-Logo.Font = Enum.Font.Code
-Logo.Text = "SK"
-Logo.TextColor3 = CONFIG.AccentColor
-Logo.TextSize = 20
-Logo.TextStrokeTransparency = 0
-Logo.Parent = Header
-
-local LogoStroke = Instance.new("UIStroke")
-LogoStroke.Color = Color3.fromRGB(60, 60, 60)
-LogoStroke.Thickness = 1
-LogoStroke.Parent = Logo
-
--- Title
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -70, 0, 25)
-Title.Position = UDim2.new(0, 60, 0, 8)
-Title.BackgroundTransparency = 1
-Title.Font = Enum.Font.Code
-Title.Text = CONFIG.Title
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
-Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.TextStrokeTransparency = 0
-Title.Parent = Header
-
--- Subtitle
-local Subtitle = Instance.new("TextLabel")
-Subtitle.Size = UDim2.new(1, -70, 0, 15)
-Subtitle.Position = UDim2.new(0, 60, 0, 33)
-Subtitle.BackgroundTransparency = 1
-Subtitle.Font = Enum.Font.Code
-Subtitle.Text = CONFIG.Subtitle
-Subtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-Subtitle.TextSize = 11
-Subtitle.TextXAlignment = Enum.TextXAlignment.Left
-Subtitle.TextTransparency = 0.3
-Subtitle.Parent = Header
-
--- Content Background
-local ContentBg = Instance.new("Frame")
-ContentBg.Size = UDim2.new(1, -20, 1, -80)
-ContentBg.Position = UDim2.new(0, 10, 0, 70)
-ContentBg.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-ContentBg.BorderSizePixel = 0
-ContentBg.Parent = MainFrame
-
-local ContentStroke = Instance.new("UIStroke")
-ContentStroke.Color = Color3.fromRGB(40, 40, 40)
-ContentStroke.Thickness = 1
-ContentStroke.Parent = ContentBg
-
--- Info Label
-local InfoLabel = Instance.new("TextLabel")
-InfoLabel.Size = UDim2.new(1, -20, 0, 30)
-InfoLabel.Position = UDim2.new(0, 10, 0, 10)
-InfoLabel.BackgroundTransparency = 1
-InfoLabel.Font = Enum.Font.Code
-InfoLabel.Text = "Enter your license key to continue"
-InfoLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-InfoLabel.TextSize = 12
-InfoLabel.TextWrapped = true
-InfoLabel.Parent = ContentBg
-
--- Key Input Container
-local InputContainer = Instance.new("Frame")
-InputContainer.Size = UDim2.new(1, -20, 0, 32)
-InputContainer.Position = UDim2.new(0, 10, 0, 45)
-InputContainer.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-InputContainer.BorderSizePixel = 0
-InputContainer.Parent = ContentBg
-
-local InputStroke = Instance.new("UIStroke")
-InputStroke.Color = Color3.fromRGB(50, 50, 50)
-InputStroke.Thickness = 1
-InputStroke.Parent = InputContainer
-
-local KeyInput = Instance.new("TextBox")
-KeyInput.Size = UDim2.new(1, -20, 1, 0)
-KeyInput.Position = UDim2.new(0, 10, 0, 0)
-KeyInput.BackgroundTransparency = 1
-KeyInput.Font = Enum.Font.Code
-KeyInput.PlaceholderText = "KEYV-XXXX-XXXX-XXXX"
-KeyInput.Text = ""
-KeyInput.TextColor3 = Color3.fromRGB(220, 220, 220)
-KeyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-KeyInput.TextSize = 13
-KeyInput.TextXAlignment = Enum.TextXAlignment.Left
-KeyInput.ClearTextOnFocus = false
-KeyInput.Parent = InputContainer
-
--- Input Focus Effects
-KeyInput.Focused:Connect(function()
-    TweenService:Create(InputStroke, TweenInfo.new(0.2), {
-        Color = CONFIG.AccentColor
-    }):Play()
-end)
-
-KeyInput.FocusLost:Connect(function()
-    TweenService:Create(InputStroke, TweenInfo.new(0.2), {
-        Color = Color3.fromRGB(50, 50, 50)
-    }):Play()
-end)
-
--- Status Label
-local StatusLabel = Instance.new("TextLabel")
-StatusLabel.Size = UDim2.new(1, -20, 0, 25)
-StatusLabel.Position = UDim2.new(0, 10, 0, 85)
-StatusLabel.BackgroundTransparency = 1
-StatusLabel.Font = Enum.Font.Code
-StatusLabel.Text = "• Waiting for input"
-StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-StatusLabel.TextSize = 11
-StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
-StatusLabel.TextTransparency = 0.5
-StatusLabel.Parent = ContentBg
-
--- Button Container
-local ButtonContainer = Instance.new("Frame")
-ButtonContainer.Size = UDim2.new(1, -20, 0, 32)
-ButtonContainer.Position = UDim2.new(0, 10, 1, -42)
-ButtonContainer.BackgroundTransparency = 1
-ButtonContainer.Parent = ContentBg
-
--- Get Key Button
-local GetKeyBtn = Instance.new("TextButton")
-GetKeyBtn.Size = UDim2.new(0.48, 0, 1, 0)
-GetKeyBtn.Position = UDim2.new(0, 0, 0, 0)
-GetKeyBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-GetKeyBtn.BorderSizePixel = 0
-GetKeyBtn.Font = Enum.Font.SourceSansBold
-GetKeyBtn.Text = "GET KEY"
-GetKeyBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-GetKeyBtn.TextSize = 13
-GetKeyBtn.Parent = ButtonContainer
-
-local GetKeyStroke = Instance.new("UIStroke")
-GetKeyStroke.Color = Color3.fromRGB(60, 60, 60)
-GetKeyStroke.Thickness = 1
-GetKeyStroke.Parent = GetKeyBtn
-
-local GetKeyGrad = Instance.new("UIGradient")
-GetKeyGrad.Rotation = 90
-GetKeyGrad.Color = ColorSequence.new(
-    Color3.fromRGB(255, 255, 255),
-    Color3.fromRGB(200, 200, 200)
-)
-GetKeyGrad.Parent = GetKeyBtn
-
--- Submit Button
-local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.48, 0, 1, 0)
-SubmitBtn.Position = UDim2.new(0.52, 0, 0, 0)
-SubmitBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-SubmitBtn.BorderSizePixel = 0
-SubmitBtn.Font = Enum.Font.SourceSansBold
-SubmitBtn.Text = "AUTHENTICATE"
-SubmitBtn.TextColor3 = Color3.fromRGB(220, 220, 220)
-SubmitBtn.TextSize = 13
-SubmitBtn.Parent = ButtonContainer
-
-local SubmitStroke = Instance.new("UIStroke")
-SubmitStroke.Color = Color3.fromRGB(60, 60, 60)
-SubmitStroke.Thickness = 1
-SubmitStroke.Parent = SubmitBtn
-
-local SubmitGrad = Instance.new("UIGradient")
-SubmitGrad.Rotation = 90
-SubmitGrad.Color = ColorSequence.new(
-    Color3.fromRGB(255, 255, 255),
-    Color3.fromRGB(200, 200, 200)
-)
-SubmitGrad.Parent = SubmitBtn
-
--- Loading Animation
-local LoadingFrame = Instance.new("Frame")
-LoadingFrame.Size = UDim2.new(0, 20, 0, 20)
-LoadingFrame.Position = UDim2.new(0.5, -10, 0.5, -10)
-LoadingFrame.BackgroundTransparency = 1
-LoadingFrame.Visible = false
-LoadingFrame.ZIndex = 20
-LoadingFrame.Parent = MainFrame
-
-local LoadingCircle = Instance.new("ImageLabel")
-LoadingCircle.Size = UDim2.new(1, 0, 1, 0)
-LoadingCircle.BackgroundTransparency = 1
-LoadingCircle.Image = "rbxassetid://4965945816"
-LoadingCircle.ImageColor3 = CONFIG.AccentColor
-LoadingCircle.Parent = LoadingFrame
-
--- Draggable
-MakeDraggable(MainFrame, Header)
-
--- // BUTTON LOGIC // --
-
--- Hover Effects
-GetKeyBtn.MouseEnter:Connect(function()
-    TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    }):Play()
-    TweenService:Create(GetKeyStroke, TweenInfo.new(0.2), {
-        Color = Color3.fromRGB(0, 150, 255)
-    }):Play()
-end)
-
-GetKeyBtn.MouseLeave:Connect(function()
-    TweenService:Create(GetKeyBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    }):Play()
-    TweenService:Create(GetKeyStroke, TweenInfo.new(0.2), {
-        Color = Color3.fromRGB(60, 60, 60)
-    }):Play()
-end)
-
-SubmitBtn.MouseEnter:Connect(function()
-    TweenService:Create(SubmitBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-    }):Play()
-    TweenService:Create(SubmitStroke, TweenInfo.new(0.2), {
-        Color = CONFIG.AccentColor
-    }):Play()
-end)
-
-SubmitBtn.MouseLeave:Connect(function()
-    TweenService:Create(SubmitBtn, TweenInfo.new(0.2), {
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    }):Play()
-    TweenService:Create(SubmitStroke, TweenInfo.new(0.2), {
-        Color = Color3.fromRGB(60, 60, 60)
-    }):Play()
-end)
-
--- Get Key Button Click
-GetKeyBtn.MouseButton1Click:Connect(function()
-    setclipboard(CONFIG.GetKeyURL)
-    StatusLabel.Text = "• Link copied to clipboard!"
-    StatusLabel.TextColor3 = Color3.fromRGB(0, 150, 255)
-    StatusLabel.TextTransparency = 0
-    
-    task.wait(2)
-    StatusLabel.Text = "• Waiting for input"
-    StatusLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
-    StatusLabel.TextTransparency = 0.5
-end)
-
--- Submit Button Click
-SubmitBtn.MouseButton1Click:Connect(function()
-    local key = KeyInput.Text
-    
-    -- Validation
-    if not key or key == "" then
-        StatusLabel.Text = "• Please enter a key"
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-        StatusLabel.TextTransparency = 0
-        return
-    end
-    
-    if not string.find(key, CONFIG.KeyPrefix) then
-        StatusLabel.Text = "• Invalid format (Must start with KEYV-)"
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-        StatusLabel.TextTransparency = 0
-        return
-    end
-    
-    -- Show Loading
-    LoadingFrame.Visible = true
-    StatusLabel.Text = "• Authenticating..."
-    StatusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
-    StatusLabel.TextTransparency = 0
-    SubmitBtn.Text = "VALIDATING..."
-    
-    -- Rotate Loading Animation
-    local loadingTween = TweenService:Create(
-        LoadingCircle,
-        TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1),
-        {Rotation = 360}
-    )
-    loadingTween:Play()
-    
-    task.wait(0.5)
-    
-    -- Server Check
-    local success, response = pcall(function()
-        return game:HttpGet(CONFIG.KeyEndpoint .. key)
     end)
+end
+
+-- Main: Create Window
+function SkeetLib:CreateWindow(config)
+    config = config or {}
+    local Title = config.Title or "Skeet.cc"
+    local Size = config.Size or UDim2.new(0, 600, 0, 400)
     
-    loadingTween:Cancel()
-    LoadingFrame.Visible = false
-    
-    if success then
-        local data = HttpService:JSONDecode(response)
-        
-        if data.valid == true then
-            -- Success
-            StatusLabel.Text = "• Authentication successful!"
-            StatusLabel.TextColor3 = Color3.fromRGB(80, 255, 80)
-            SubmitBtn.Text = "✓ VERIFIED"
-            SubmitStroke.Color = Color3.fromRGB(80, 255, 80)
-            
-            task.wait(0.5)
-            
-            -- Exit Animation
-            TweenService:Create(BlurEffect, TweenInfo.new(0.3), {Size = 0}):Play()
-            TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 0, 0, 0),
-                Position = UDim2.new(0.5, 0, 0.5, 0)
-            }):Play()
-            
-            task.wait(0.5)
-            ScreenGui:Destroy()
-            BlurEffect:Destroy()
-            
-            -- ==================================================
-            --                 LOAD MAIN SCRIPT
-            -- ==================================================
-            
-            -- Load your main script here
-            loadstring(game:HttpGet("YOUR_MAIN_SCRIPT_URL_HERE"))()
-            
-            -- Or use the SkeetLib library:
-            --[[
-            local SkeetLib = loadstring(game:HttpGet("YOUR_SKEETLIB_URL"))()
-            
-            local Window = SkeetLib:CreateWindow({
-                Title = "My Skeet Menu",
-                Size = UDim2.new(0, 650, 0, 450)
-            })
-            
-            local Tab1 = Window:Tab({Name = "Main"})
-            local Section1 = Tab1:Section({Name = "Features"})
-            
-            Section1:Toggle({
-                Name = "Example Toggle",
-                Default = false,
-                Callback = function(value)
-                    print("Toggle:", value)
-                end
-            })
-            ]]--
-            
-        else
-            StatusLabel.Text = "• Invalid or expired key"
-            StatusLabel.TextColor3 = Color3.fromRGB(255, 80, 80)
-            SubmitBtn.Text = "✗ FAILED"
-            SubmitStroke.Color = Color3.fromRGB(255, 80, 80)
-            
-            task.wait(1.5)
-            SubmitBtn.Text = "AUTHENTICATE"
-            SubmitStroke.Color = Color3.fromRGB(60, 60, 60)
+    -- Cleanup
+    for _, v in pairs(CoreGui:GetChildren()) do
+        if v.Name == "SkeetUI_" .. Title then
+            v:Destroy()
         end
-    else
-        StatusLabel.Text = "• Connection error - Check network"
-        StatusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-        SubmitBtn.Text = "✗ ERROR"
+    end
+    
+    local Window = {}
+    Window.Tabs = {}
+    Window.CurrentTab = nil
+    
+    -- ScreenGui
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "SkeetUI_" .. Title
+    ScreenGui.Parent = CoreGui
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.ResetOnSpawn = false
+    
+    -- Main Frame
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Name = "MainWindow"
+    MainFrame.Size = Size
+    MainFrame.Position = UDim2.new(0.5, -Size.X.Offset/2, 0.5, -Size.Y.Offset/2)
+    MainFrame.BackgroundColor3 = self.Config.BackgroundColor
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Parent = ScreenGui
+    
+    -- Borders
+    local OuterStroke = Instance.new("UIStroke")
+    OuterStroke.Thickness = 1
+    OuterStroke.Color = Color3.fromRGB(0, 0, 0)
+    OuterStroke.Parent = MainFrame
+    
+    local MiddleStroke = Instance.new("UIStroke")
+    MiddleStroke.Thickness = 1
+    MiddleStroke.Color = self.Config.BorderColor
+    MiddleStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    MiddleStroke.Parent = MainFrame
+    
+    -- Rainbow Bar
+    local GradientBar = Instance.new("Frame")
+    GradientBar.Size = UDim2.new(1, 0, 0, 2)
+    GradientBar.Position = UDim2.new(0, 0, 0, 0)
+    GradientBar.BorderSizePixel = 0
+    GradientBar.ZIndex = 10
+    GradientBar.Parent = MainFrame
+    
+    local RainbowGrad = self:CreateRainbowGradient()
+    RainbowGrad.Parent = GradientBar
+    self:AnimateRainbow(RainbowGrad)
+    
+    -- Header
+    local Header = Instance.new("Frame")
+    Header.Name = "Header"
+    Header.Size = UDim2.new(1, 0, 0, 30)
+    Header.Position = UDim2.new(0, 0, 0, 2)
+    Header.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    Header.BorderSizePixel = 0
+    Header.Parent = MainFrame
+    
+    local TitleLabel = Instance.new("TextLabel")
+    TitleLabel.Size = UDim2.new(1, -10, 1, 0)
+    TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+    TitleLabel.BackgroundTransparency = 1
+    TitleLabel.Font = self.Config.Font
+    TitleLabel.Text = Title
+    TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    TitleLabel.TextSize = 14
+    TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLabel.TextStrokeTransparency = 0
+    TitleLabel.Parent = Header
+    
+    -- Tab Container
+    local TabContainer = Instance.new("Frame")
+    TabContainer.Name = "TabContainer"
+    TabContainer.Size = UDim2.new(0, 140, 1, -32)
+    TabContainer.Position = UDim2.new(0, 0, 0, 32)
+    TabContainer.BackgroundColor3 = Color3.fromRGB(17, 17, 17)
+    TabContainer.BorderSizePixel = 0
+    TabContainer.Parent = MainFrame
+    
+    local TabStroke = Instance.new("UIStroke")
+    TabStroke.Color = Color3.fromRGB(12, 12, 12)
+    TabStroke.Thickness = 1
+    TabStroke.Parent = TabContainer
+    
+    local TabListLayout = Instance.new("UIListLayout")
+    TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabListLayout.Padding = UDim.new(0, 2)
+    TabListLayout.Parent = TabContainer
+    
+    -- Content Container
+    local ContentContainer = Instance.new("Frame")
+    ContentContainer.Name = "ContentContainer"
+    ContentContainer.Size = UDim2.new(1, -140, 1, -32)
+    ContentContainer.Position = UDim2.new(0, 140, 0, 32)
+    ContentContainer.BackgroundColor3 = self.Config.InnerBgColor
+    ContentContainer.BorderSizePixel = 0
+    ContentContainer.Parent = MainFrame
+    
+    local ContentStroke = Instance.new("UIStroke")
+    ContentStroke.Color = Color3.fromRGB(12, 12, 12)
+    ContentStroke.Thickness = 1
+    ContentStroke.Parent = ContentContainer
+    
+    -- Make Draggable
+    self:MakeDraggable(MainFrame, Header)
+    
+    -- Tab Function
+    function Window:Tab(tabConfig)
+        tabConfig = tabConfig or {}
+        local TabName = tabConfig.Name or "Tab"
         
-        warn("Key Validation Error:", response)
+        local Tab = {}
+        Tab.Sections = {}
+        Tab.Active = false
         
-        task.wait(1.5)
-        SubmitBtn.Text = "AUTHENTICATE"
+        -- Tab Button
+        local TabButton = Instance.new("TextButton")
+        TabButton.Name = TabName
+        TabButton.Size = UDim2.new(1, 0, 0, 32)
+        TabButton.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        TabButton.BorderSizePixel = 0
+        TabButton.Font = SkeetLib.Config.Font
+        TabButton.Text = "  " .. TabName
+        TabButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+        TabButton.TextSize = 13
+        TabButton.TextXAlignment = Enum.TextXAlignment.Left
+        TabButton.Parent = TabContainer
+        
+        local TabButtonStroke = Instance.new("UIStroke")
+        TabButtonStroke.Color = Color3.fromRGB(40, 40, 40)
+        TabButtonStroke.Thickness = 1
+        TabButtonStroke.Transparency = 0.5
+        TabButtonStroke.Parent = TabButton
+        
+        -- Tab Content
+        local TabContent = Instance.new("ScrollingFrame")
+        TabContent.Name = TabName .. "_Content"
+        TabContent.Size = UDim2.new(1, -10, 1, -10)
+        TabContent.Position = UDim2.new(0, 5, 0, 5)
+        TabContent.BackgroundTransparency = 1
+        TabContent.BorderSizePixel = 0
+        TabContent.ScrollBarThickness = 4
+        TabContent.ScrollBarImageColor3 = SkeetLib.Config.AccentColor
+        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+        TabContent.Visible = false
+        TabContent.Parent = ContentContainer
+        
+        local TabLayout = Instance.new("UIListLayout")
+        TabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        TabLayout.Padding = UDim.new(0, 8)
+        TabLayout.Parent = TabContent
+        
+        TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            TabContent.CanvasSize = UDim2.new(0, 0, 0, TabLayout.AbsoluteContentSize.Y + 10)
+        end)
+        
+        -- Tab Switching
+        TabButton.MouseButton1Click:Connect(function()
+            for _, tab in pairs(Window.Tabs) do
+                tab.Content.Visible = false
+                tab.Button.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+                tab.Button.TextColor3 = Color3.fromRGB(180, 180, 180)
+            end
+            
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Window.CurrentTab = Tab
+        end)
+        
+        -- Hover
+        TabButton.MouseEnter:Connect(function()
+            if not Tab.Active then
+                TweenService:Create(TabButton, TweenInfo.new(0.15), {
+                    BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+                }):Play()
+            end
+        end)
+        
+        TabButton.MouseLeave:Connect(function()
+            if not Tab.Active then
+                TweenService:Create(TabButton, TweenInfo.new(0.15), {
+                    BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+                }):Play()
+            end
+        end)
+        
+        Tab.Button = TabButton
+        Tab.Content = TabContent
+        table.insert(Window.Tabs, Tab)
+        
+        -- Auto-select first
+        if #Window.Tabs == 1 then
+            TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+            TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            TabContent.Visible = true
+            Tab.Active = true
+            Window.CurrentTab = Tab
+        end
+        
+        -- Section Function
+        function Tab:Section(sectionConfig)
+            sectionConfig = sectionConfig or {}
+            local SectionName = sectionConfig.Name or "Section"
+            
+            local Section = {}
+            Section.Elements = {}
+            
+            local SectionFrame = Instance.new("Frame")
+            SectionFrame.Name = SectionName
+            SectionFrame.Size = UDim2.new(1, -10, 0, 25)
+            SectionFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+            SectionFrame.BorderSizePixel = 0
+            SectionFrame.AutomaticSize = Enum.AutomaticSize.Y
+            SectionFrame.Parent = TabContent
+            
+            local SectionStroke = Instance.new("UIStroke")
+            SectionStroke.Color = Color3.fromRGB(45, 45, 45)
+            SectionStroke.Thickness = 1
+            SectionStroke.Parent = SectionFrame
+            
+            local SectionHeader = Instance.new("TextLabel")
+            SectionHeader.Size = UDim2.new(1, 0, 0, 20)
+            SectionHeader.BackgroundTransparency = 1
+            SectionHeader.Font = SkeetLib.Config.Font
+            SectionHeader.Text = SectionName
+            SectionHeader.TextColor3 = SkeetLib.Config.AccentColor
+            SectionHeader.TextSize = 12
+            SectionHeader.TextXAlignment = Enum.TextXAlignment.Left
+            SectionHeader.TextStrokeTransparency = 0.5
+            SectionHeader.Parent = SectionFrame
+            
+            local SectionPadding = Instance.new("UIPadding")
+            SectionPadding.PaddingLeft = UDim.new(0, 8)
+            SectionPadding.PaddingTop = UDim.new(0, 2)
+            SectionPadding.Parent = SectionHeader
+            
+            local SectionContent = Instance.new("Frame")
+            SectionContent.Name = "Content"
+            SectionContent.Size = UDim2.new(1, 0, 0, 0)
+            SectionContent.Position = UDim2.new(0, 0, 0, 22)
+            SectionContent.BackgroundTransparency = 1
+            SectionContent.AutomaticSize = Enum.AutomaticSize.Y
+            SectionContent.Parent = SectionFrame
+            
+            local ContentLayout = Instance.new("UIListLayout")
+            ContentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            ContentLayout.Padding = UDim.new(0, 4)
+            ContentLayout.Parent = SectionContent
+            
+            local ContentPadding = Instance.new("UIPadding")
+            ContentPadding.PaddingLeft = UDim.new(0, 8)
+            ContentPadding.PaddingRight = UDim.new(0, 8)
+            ContentPadding.PaddingBottom = UDim.new(0, 6)
+            ContentPadding.Parent = SectionContent
+            
+            -- BUTTON
+            function Section:Button(config)
+                config = config or {}
+                local Name = config.Name or "Button"
+                local Callback = config.Callback or function() end
+                
+                local ButtonFrame = Instance.new("TextButton")
+                ButtonFrame.Size = UDim2.new(1, 0, 0, 22)
+                ButtonFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+                ButtonFrame.BorderSizePixel = 0
+                ButtonFrame.Font = SkeetLib.Config.Font
+                ButtonFrame.Text = Name
+                ButtonFrame.TextColor3 = SkeetLib.Config.TextColor
+                ButtonFrame.TextSize = 12
+                ButtonFrame.Parent = SectionContent
+                
+                local BtnStroke = Instance.new("UIStroke")
+                BtnStroke.Color = Color3.fromRGB(50, 50, 50)
+                BtnStroke.Thickness = 1
+                BtnStroke.Parent = ButtonFrame
+                
+                ButtonFrame.MouseEnter:Connect(function()
+                    TweenService:Create(ButtonFrame, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+                    }):Play()
+                    TweenService:Create(BtnStroke, TweenInfo.new(0.15), {
+                        Color = SkeetLib.Config.AccentColor
+                    }):Play()
+                end)
+                
+                ButtonFrame.MouseLeave:Connect(function()
+                    TweenService:Create(ButtonFrame, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+                    }):Play()
+                    TweenService:Create(BtnStroke, TweenInfo.new(0.15), {
+                        Color = Color3.fromRGB(50, 50, 50)
+                    }):Play()
+                end)
+                
+                ButtonFrame.MouseButton1Click:Connect(function()
+                    pcall(Callback)
+                end)
+            end
+            
+            table.insert(Tab.Sections, Section)
+            return Section
+        end
+        
+        return Tab
     end
-end)
-
--- // INTRO ANIMATION // --
-MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
-MainFrame.BackgroundTransparency = 1
-
-for _, v in pairs(MainFrame:GetDescendants()) do
-    if v:IsA("GuiObject") and v ~= MainFrame then
-        v.Visible = false
-    end
+    
+    -- Intro Animation
+    MainFrame.Size = UDim2.new(0, 0, 0, 0)
+    MainFrame.BackgroundTransparency = 1
+    
+    TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+        Size = Size,
+        BackgroundTransparency = 0
+    }):Play()
+    
+    return Window
 end
 
-task.wait(0.2)
-
-TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-    Size = UDim2.new(0, 420, 0, 260),
-    Position = UDim2.new(0.5, -210, 0.5, -130),
-    BackgroundTransparency = 0
-}):Play()
-
-task.wait(0.3)
-
-for _, v in pairs(MainFrame:GetDescendants()) do
-    if v:IsA("GuiObject") and v ~= MainFrame then
-        v.Visible = true
-    end
-end
-
--- Typewriter effect for title
-local originalText = CONFIG.Title
-Title.Text = ""
-for i = 1, #originalText do
-    Title.Text = string.sub(originalText, 1, i)
-    task.wait(0.05)
-end
+-- Return the library
+return SkeetLib
